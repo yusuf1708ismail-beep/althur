@@ -18,14 +18,18 @@ const API_KEY = process.env.API_KEY || '$2a$10$egHvuL0PcRFYPV5N1s0JUeNl3nk7iJxTb
 const ADMIN_TOKEN = 'admin-secret-token-12345';
 
 // --------------------------------------------
-// خوێندنەوە و توماسکردن لە JSONBin
+// خوێندنەوە و پاشەکەوتکردن لە JSONBin
 // --------------------------------------------
 async function loadUsersFromJSONBin() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
             headers: { 'X-Master-Key': API_KEY }
         });
-        if (!response.ok) return { users: [] };
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error('JSONBin load failed:', response.status, errText);
+            return { users: [] };
+        }
         const data = await response.json();
         return data.record || { users: [] };
     } catch (error) {
@@ -36,7 +40,7 @@ async function loadUsersFromJSONBin() {
 
 async function saveUsersToJSONBin(users) {
     try {
-        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -44,6 +48,11 @@ async function saveUsersToJSONBin(users) {
             },
             body: JSON.stringify({ users: users })
         });
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error('JSONBin save failed:', response.status, errText);
+            return false;
+        }
         return true;
     } catch (error) {
         console.error('Error saving JSONBin:', error);
